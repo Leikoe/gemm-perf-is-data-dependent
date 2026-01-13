@@ -33,3 +33,14 @@ bench_gemm(a, b, title="zero initialized A and B")
 a = np.random.rand(N, N).astype(np.float32)
 b = np.random.rand(N, N).astype(np.float32)
 bench_gemm(a, b, title="rand initialized A and B")
+
+
+def zero_last_n_bits(arr, n):
+    mask = ~np.uint32(0) << np.uint32(n)
+    arr.view(np.uint32)[:] &= mask
+    return arr
+
+for i in range(31): # for 32 bits
+    a = zero_last_n_bits(np.random.rand(N, N).astype(np.float32), i)
+    b = zero_last_n_bits(np.random.rand(N, N).astype(np.float32), i)
+    bench_gemm(a, b, title=f"rand initialized A and B ({i} last bits zeroed out)")
