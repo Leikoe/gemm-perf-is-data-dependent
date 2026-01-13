@@ -59,7 +59,7 @@ double *alloc_random_matrix(const int size, const int mask_size) {
   return mat;
 }
 
-#define MAT_SIZE 8192
+#define MAT_SIZE 2048
 #define NB_REPET 5
 
 struct timespec get_duration_const(double c) {
@@ -113,6 +113,12 @@ void print_progress(int current, int total) {
     fflush(stdout);
 }
 
+double to_gflops(struct timespec t) {
+    double time_sec = (double)t.tv_sec + (double)t.tv_nsec / 1e9;
+    double total_ops = 2.0 * (double)MAT_SIZE * (double)MAT_SIZE * (double)MAT_SIZE;
+    return (total_ops / time_sec) / 1e9;
+}
+
 int main(void) {
   FILE *fp = fopen("benchmark_results.csv", "w");
   if (fp == NULL) {
@@ -120,7 +126,7 @@ int main(void) {
       return EXIT_FAILURE;
   }
 
-  fprintf(fp, "type,special,duration\n");
+  fprintf(fp, "type,special,gflops\n");
   
   struct timespec cur;
   
@@ -132,24 +138,24 @@ int main(void) {
 
   for (int i = 0; i < NB_REPET; i++) {
     cur = get_duration_const(0.);
-    fprintf(fp, "const,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    fprintf(fp, "const,0,%.6f\n", to_gflops(cur));
     print_progress(++current_step, total_steps);
 
     cur = get_duration_const(.987);
-    fprintf(fp, "const,.987,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    fprintf(fp, "const,.987,%.6f\n", to_gflops(cur));
     print_progress(++current_step, total_steps);
 
     cur = get_duration_const(1);
-    fprintf(fp, "const,1,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    fprintf(fp, "const,1,%.6f\n", to_gflops(cur));
     print_progress(++current_step, total_steps);
 
     cur = get_duration_interval();
-    fprintf(fp, "interval,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    fprintf(fp, "interval,0,%.6f\n", to_gflops(cur));
     print_progress(++current_step, total_steps);
 
     for (int j = 0; j <= 53; j += 2) {
       cur = get_duration_random(j);
-      fprintf(fp, "random,%d,%ld.%ld\n", j, cur.tv_sec, cur.tv_nsec);
+      fprintf(fp, "random,%d,%.6f\n", j, to_gflops(cur));
       print_progress(++current_step, total_steps);
     } 
   }
