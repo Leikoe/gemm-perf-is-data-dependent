@@ -60,7 +60,8 @@ double *alloc_random_matrix(const int size, const int mask_size) {
   return mat;
 }
 
-#define MAT_SIZE 4096
+#define MAT_SIZE 8192
+#define NB_REPET 5
 
 struct timespec get_duration_const(double c) {
   double *A, *B, *C;
@@ -110,17 +111,19 @@ struct timespec get_duration_random() {
 int main(void) {
   printf("type,special,duration\n");
   struct timespec cur;
-  cur = get_duration_const(0.);
-  printf("const,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
-  cur = get_duration_const(.987);
-  printf("const,.987,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
-  cur = get_duration_const(1);
-  printf("const,1,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
-  cur = get_duration_interval();
-  printf("interval,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
-  for (int i = 0; i < 53; i++) {
-    cur = get_duration_random();
-    printf("random,%d,%ld.%ld\n", i, cur.tv_sec, cur.tv_nsec);
-  } 
+  for (int i = 0; i < NB_REPET; i++) {
+    cur = get_duration_const(0.);
+    printf("const,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    cur = get_duration_const(.987);
+    printf("const,.987,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    cur = get_duration_const(1);
+    printf("const,1,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    cur = get_duration_interval();
+    printf("interval,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    for (int i = 0; i < 53; i++) {
+      cur = get_duration_random();
+      printf("random,%d,%ld.%ld\n", i, cur.tv_sec, cur.tv_nsec);
+    } 
+  }
   return EXIT_SUCCESS;
 }
