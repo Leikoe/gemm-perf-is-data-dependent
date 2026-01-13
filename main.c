@@ -18,7 +18,6 @@ struct timespec diff_timespec(const struct timespec *time0,
   return diff;
 }
 
-
 double *alloc_matrix(const int size);
 double *alloc_const_matrix(const int size, const int c);
 double *alloc_interval_matrix(const int size);
@@ -93,10 +92,10 @@ struct timespec get_duration_interval() {
   return diff_timespec(&start, &end);
 }
 
-struct timespec get_duration_random() {
+struct timespec get_duration_random(int mask_size) {
   double *A, *B, *C;
-  A = alloc_random_matrix(MAT_SIZE, 0);
-  B = alloc_random_matrix(MAT_SIZE, 0);
+  A = alloc_random_matrix(MAT_SIZE, mask_size); 
+  B = alloc_random_matrix(MAT_SIZE, mask_size);
   C = alloc_const_matrix(MAT_SIZE, 0);
   struct timespec start, end;
   assert(clock_gettime(CLOCK_MONOTONIC, &start) == 0);
@@ -108,22 +107,54 @@ struct timespec get_duration_random() {
   return diff_timespec(&start, &end);
 }
 
+void print_progress(int current, int total) {
+    float percentage = (float)current / total * 100.0;
+    printf("\rProgress: %.1f%% (%d/%d)", percentage, current, total);
+    fflush(stdout);
+}
+
 int main(void) {
-  printf("type,special,duration\n");
+  FILE *fp = fopen("benchmark_results.csv", "w");
+  if (fp == NULL) {
+      perror("Error opening file");
+      return EXIT_FAILURE;
+  }
+
+  fprintf(fp, "type,special,duration\n");
+  
   struct timespec cur;
+  
+  int steps_per_repet = 3 + 1 + 27; 
+  int total_steps = NB_REPET * steps_per_repet;
+  int current_step = 0;
+
+  printf("Starting benchmark (Results -> benchmark_results.csv)...\n");
+
   for (int i = 0; i < NB_REPET; i++) {
     cur = get_duration_const(0.);
-    printf("const,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    fprintf(fp, "const,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    print_progress(++current_step, total_steps);
+
     cur = get_duration_const(.987);
-    printf("const,.987,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    fprintf(fp, "const,.987,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    print_progress(++current_step, total_steps);
+
     cur = get_duration_const(1);
-    printf("const,1,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    fprintf(fp, "const,1,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    print_progress(++current_step, total_steps);
+
     cur = get_duration_interval();
-    printf("interval,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
-    for (int i = 0; i <= 53; i += 2) {
-      cur = get_duration_random();
-      printf("random,%d,%ld.%ld\n", i, cur.tv_sec, cur.tv_nsec);
+    fprintf(fp, "interval,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
+    print_progress(++current_step, total_steps);
+
+    for (int j = 0; j <= 53; j += 2) {
+      cur = get_duration_random(j);
+      fprintf(fp, "random,%d,%ld.%ld\n", j, cur.tv_sec, cur.tv_nsec);
+      print_progress(++current_step, total_steps);
     } 
   }
+
+  printf("\nDone.\n");
+  fclose(fp);
   return EXIT_SUCCESS;
 }
