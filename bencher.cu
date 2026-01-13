@@ -110,7 +110,7 @@ void run_benchmark_step(cublasHandle_t handle,
 
 int main() {
     int M = 8192;
-    int N_dim = 8192; // Renamed to avoid confusion with bit N loop
+    int N = 8192; // Renamed to avoid confusion with bit N loop
     int K = 8192;
 
     cublasHandle_t handle;
@@ -134,8 +134,8 @@ int main() {
     CHECK_CUDA(cudaEventCreate(&stop));
 
     size_t size_A = (size_t)M * K * sizeof(float);
-    size_t size_B = (size_t)K * N_dim * sizeof(float);
-    size_t size_C = (size_t)M * N_dim * sizeof(float);
+    size_t size_B = (size_t)K * N * sizeof(float);
+    size_t size_C = (size_t)M * N * sizeof(float);
     size_t elements_A = size_A / sizeof(float);
     size_t elements_B = size_B / sizeof(float);
 
@@ -165,7 +165,7 @@ int main() {
             CHECK_CUDA(cudaDeviceSynchronize());
         }
 
-        run_benchmark_step(handle, d_A, d_B, d_C, d_flush, flush_count, start, stop, M, N_dim, K, n_bits);
+        run_benchmark_step(handle, d_A, d_B, d_C, d_flush, flush_count, start, stop, M, N, K, n_bits);
     }
 
     // Cleanup
