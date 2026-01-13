@@ -136,6 +136,12 @@ int main(void) {
 
   printf("Starting benchmark (Results -> benchmark_results.csv)...\n");
 
+
+  get_duration_const(0.);
+  get_duration_const(.987);
+  get_duration_const(1);
+  get_duration_interval();
+  get_duration_random(0);
   for (int i = 0; i < NB_REPET; i++) {
     cur = get_duration_const(0.);
     fprintf(fp, "const,0,%.6f\n", to_gflops(cur));
