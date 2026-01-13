@@ -120,7 +120,7 @@ int main(void) {
     printf("const,1,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
     cur = get_duration_interval();
     printf("interval,0,%ld.%ld\n", cur.tv_sec, cur.tv_nsec);
-    for (int i = 0; i < 53; i++) {
+    for (int i = 0; i <= 53; i += 2) {
       cur = get_duration_random();
       printf("random,%d,%ld.%ld\n", i, cur.tv_sec, cur.tv_nsec);
     } 
