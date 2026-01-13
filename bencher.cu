@@ -4,6 +4,9 @@
 #include <cublas_v2.h>
 #include <curand.h>
 
+#define ITERATIONS 10
+#define SIZE 8192
+
 // --- Error Handling Macros ---
 #define CHECK_CUDA(func) { \
     cudaError_t status = (func); \
@@ -62,32 +65,31 @@ void run_benchmark_step(cublasHandle_t handle,
                         float *d_A, float *d_B, float *d_C,
                         float *d_flush, size_t flush_count,
                         cudaEvent_t start, cudaEvent_t stop,
-                        int M, int N_dim, int K,
+                        int M, int N, int K,
                         int n_bits_zeroed)
 {
     const float alpha = 1.0f;
     const float beta = 0.0f;
-    double total_flops = 2.0 * (double)M * (double)N_dim * (double)K;
+    double total_flops = 2.0 * (double)M * (double)N * (double)K;
     double tflops_conversion = 1.0e12;
 
     int threads = 256;
     int blocks = (flush_count + threads - 1) / threads;
 
-    int iterations = 10;
     double total_ms = 0.0;
     double total_tflops = 0.0;
 
     // Warmup
-    CHECK_CUBLAS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N_dim, K, &alpha, d_A, M, d_B, K, &beta, d_C, M));
+    CHECK_CUBLAS(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, M, N, K, &alpha, d_A, K, d_B, K, &beta, d_C, M));
     CHECK_CUDA(cudaDeviceSynchronize());
 
-    for (int i = 0; i < iterations; ++i) {
+    for (int i = 0; i < ITERATIONS; ++i) {
         // Flush L2
         flush_l2_kernel<<<blocks, threads>>>(d_flush, flush_count);
         CHECK_CUDA(cudaDeviceSynchronize());
 
         CHECK_CUDA(cudaEventRecord(start, 0));
-        CHECK_CUBLAS(cublasSgemm(handle, CUBLAS_OP_N, CUBLAS_OP_N, M, N_dim, K, &alpha, d_A, M, d_B, K, &beta, d_C, M));
+        CHECK_CUBLAS(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, M, N, K, &alpha, d_A, K, d_B, K, &beta, d_C, M));
         CHECK_CUDA(cudaEventRecord(stop, 0));
         CHECK_CUDA(cudaEventSynchronize(stop));
 
@@ -101,17 +103,17 @@ void run_benchmark_step(cublasHandle_t handle,
         total_tflops += current_tflops;
     }
 
-    double avg_ms = total_ms / iterations;
-    double avg_tflops = total_tflops / iterations;
+    double avg_ms = total_ms / ITERATIONS;
+    double avg_tflops = total_tflops / ITERATIONS;
 
     // CSV Output: BitsZeroed, AvgTimeMs, AvgTFLOPS
     printf("%d,%.4f,%.4f\n", n_bits_zeroed, avg_ms, avg_tflops);
 }
 
 int main() {
-    int M = 8192;
-    int N = 8192; // Renamed to avoid confusion with bit N loop
-    int K = 8192;
+    int M = SIZE;
+    int N = SIZE;
+    int K = SIZE;
 
     cublasHandle_t handle;
     CHECK_CUBLAS(cublasCreate(&handle));
