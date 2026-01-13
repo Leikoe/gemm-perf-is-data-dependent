@@ -1,1 +1,4 @@
 .venv/
+
+cuda_bencher
+flops_vs_bits.png

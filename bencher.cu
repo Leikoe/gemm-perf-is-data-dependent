@@ -80,8 +80,10 @@ void run_benchmark_step(cublasHandle_t handle,
     double total_tflops = 0.0;
 
     // Warmup
-    CHECK_CUBLAS(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, M, N, K, &alpha, d_A, K, d_B, K, &beta, d_C, M));
-    CHECK_CUDA(cudaDeviceSynchronize());
+    for (int i = 0; i < ITERATIONS; i++) {
+        CHECK_CUBLAS(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, M, N, K, &alpha, d_A, K, d_B, K, &beta, d_C, M));
+        CHECK_CUDA(cudaDeviceSynchronize());
+    }
 
     for (int i = 0; i < ITERATIONS; ++i) {
         // Flush L2
