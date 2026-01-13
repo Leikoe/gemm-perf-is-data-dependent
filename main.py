@@ -1,14 +1,15 @@
 import csv
+import sys
 
 import matplotlib.pyplot as plt
 
-RESULTS_FILE = "cuda.csv"
-
 if __name__ == "__main__":
+    assert(len(sys.argv) == 2), f"python {sys.argv[0]} <result.csv>"
+
     bits_zeroed = []
     tflops = []
 
-    with open(RESULTS_FILE, mode='r') as f:
+    with open(sys.argv[1], mode='r') as f:
         reader = csv.DictReader(f)
         for row in reader:
             # Header: BitsZeroed,AvgTimeMs,AvgTFLOPS
