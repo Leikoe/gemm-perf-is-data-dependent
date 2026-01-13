@@ -1,46 +1,31 @@
-import os
-os.environ["OMP_NUM_THREADS"] = "1" # disable omp for the gemms
-import numpy as np
-import time
-from statistics import mean, median
+import csv
 
-N = 4096
-ITERS = 100
-FLOP = 2*N*N*N
+import matplotlib.pyplot as plt
 
-# from https://github.com/stas00/ml-engineering/blob/master/compute/accelerator/benchmarks/mamf-finder.py#L299C5-L300C98
-l2_cache_size_in_mbs = 256
-l2_cache = np.empty(int(l2_cache_size_in_mbs * 2**20 / 4), dtype=np.int32)
+RESULTS_FILE = "cuda.csv"
 
-def bench_gemm(a: np.ndarray, b: np.ndarray, title=None):
-    """
-    Prints flops of a@b.T
-    """
-    gflops = []
-    for i in range(ITERS):
-        l2_cache[:] = 0
-        start = time.monotonic()
-        c = a @ b.T
-        end = time.monotonic()
-        s = end - start
-        gflops.append(FLOP/s * 1e-9)
-    print(f"{title+': ' if title is not None else ''}avg: {mean(gflops):.2f}GFlop/s, min: {min(gflops):.2f}GFlop/s, max: {max(gflops):.2f}GFlop/s, median: {median(gflops):.2f}GFlop/s")
+if __name__ == "__main__":
+    bits_zeroed = []
+    tflops = []
 
-a = np.zeros((N, N), dtype=np.float32)
-b = np.zeros((N, N), dtype=np.float32)
-bench_gemm(a, b, title="zero initialized A and B")
+    with open(RESULTS_FILE, mode='r') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            # Header: BitsZeroed,AvgTimeMs,AvgTFLOPS
+            bits_zeroed.append(int(row['BitsZeroed']))
+            tflops.append(float(row['AvgTFLOPS']))
 
-a = np.random.rand(N, N).astype(np.float32)
-b = np.random.rand(N, N).astype(np.float32)
-bench_gemm(a, b, title="rand initialized A and B")
+    plt.figure(figsize=(10, 6))
+    plt.plot(bits_zeroed, tflops, marker='o', linestyle='-', color='b', label='Performance')
 
+    plt.title('SGEMM Performance vs. Floating Point Entropy', fontsize=14)
+    plt.xlabel('Number of LSB Bits Zeroed (N)', fontsize=12)
+    plt.ylabel('Effective TFLOPS', fontsize=12)
 
-def zero_last_n_bits(arr, n):
-    mask = ~np.uint32(0) << np.uint32(n)
-    arr.view(np.uint32)[:] &= mask
-    return arr
+    plt.grid(True, which='both', linestyle='--', linewidth=0.5)
 
-for i in range(31): # for 32 bits
-    a = zero_last_n_bits(np.random.rand(N, N).astype(np.float32), i)
-    b = zero_last_n_bits(np.random.rand(N, N).astype(np.float32), i)
-    bench_gemm(a, b, title=f"rand initialized A and B ({i} last bits zeroed out)")
+    plt.xticks(range(0, 33, 2))
+
+    output_file = 'flops_vs_bits.png'
+    plt.savefig(output_file)
+    print(f"Plot saved to {output_file}")
