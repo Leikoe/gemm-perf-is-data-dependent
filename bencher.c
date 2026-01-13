@@ -120,48 +120,56 @@ double to_gflops(struct timespec t) {
 }
 
 int main(void) {
+  putenv("OMP_NUM_THREADS=1");
   FILE *fp = fopen("benchmark_results.csv", "w");
   if (fp == NULL) {
       perror("Error opening file");
       return EXIT_FAILURE;
   }
 
-  fprintf(fp, "type,special,gflops\n");
+  //fprintf(fp, "type,special,gflops\n");
+  fprintf(fp, "n_bits_zeroed,gflops\n");
   
   struct timespec cur;
   
-  int steps_per_repet = 3 + 1 + 27; 
+  int steps_per_repet = /*3 + 1*/ + 27; 
   int total_steps = NB_REPET * steps_per_repet;
   int current_step = 0;
 
   printf("Starting benchmark (Results -> benchmark_results.csv)...\n");
 
 
-  get_duration_const(0.);
-  get_duration_const(.987);
-  get_duration_const(1);
-  get_duration_interval();
-  get_duration_random(0);
+  //get_duration_const(0.);
+  //get_duration_const(.987);
+  //get_duration_const(1);
+  //get_duration_interval();
+  printf("warming up\n");
+  for (int i = 0; i < 53; i++) {
+    get_duration_random(i);
+  }
+  printf("warmed\n");
+  //get_duration_random(0);
   for (int i = 0; i < NB_REPET; i++) {
-    cur = get_duration_const(0.);
-    fprintf(fp, "const,0,%.6f\n", to_gflops(cur));
-    print_progress(++current_step, total_steps);
+    // cur = get_duration_const(0.);
+    // fprintf(fp, "const,0,%.6f\n", to_gflops(cur));
+    // print_progress(++current_step, total_steps);
 
-    cur = get_duration_const(.987);
-    fprintf(fp, "const,.987,%.6f\n", to_gflops(cur));
-    print_progress(++current_step, total_steps);
+    // cur = get_duration_const(.987);
+    // fprintf(fp, "const,.987,%.6f\n", to_gflops(cur));
+    // print_progress(++current_step, total_steps);
 
-    cur = get_duration_const(1);
-    fprintf(fp, "const,1,%.6f\n", to_gflops(cur));
-    print_progress(++current_step, total_steps);
+    // cur = get_duration_const(1);
+    // fprintf(fp, "const,1,%.6f\n", to_gflops(cur));
+    // print_progress(++current_step, total_steps);
 
-    cur = get_duration_interval();
-    fprintf(fp, "interval,0,%.6f\n", to_gflops(cur));
-    print_progress(++current_step, total_steps);
+    // cur = get_duration_interval();
+    // fprintf(fp, "interval,0,%.6f\n", to_gflops(cur));
+    // print_progress(++current_step, total_steps);
 
     for (int j = 0; j <= 53; j += 2) {
       cur = get_duration_random(j);
-      fprintf(fp, "random,%d,%.6f\n", j, to_gflops(cur));
+      //fprintf(fp, "random,%d,%.6f\n", j, to_gflops(cur));
+      fprintf(fp, "%d,%.6f\n", j, to_gflops(cur));
       print_progress(++current_step, total_steps);
     } 
   }
