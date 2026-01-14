@@ -5,7 +5,7 @@
 #include <curand.h>
 
 #define ITERATIONS 20
-#define SIZE 8192
+#define SIZE 16384
 
 // --- Error Handling Macros ---
 #define CHECK_CUDA(func) { \
@@ -82,8 +82,8 @@ void run_benchmark_step(cublasHandle_t handle,
     // Warmup
     for (int i = 0; i < ITERATIONS; i++) {
         CHECK_CUBLAS(cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_N, M, N, K, &alpha, d_A, K, d_B, K, &beta, d_C, M));
-        CHECK_CUDA(cudaDeviceSynchronize());
     }
+    CHECK_CUDA(cudaDeviceSynchronize());
 
     for (int i = 0; i < ITERATIONS; ++i) {
         // Flush L2
@@ -119,6 +119,7 @@ int main() {
 
     cublasHandle_t handle;
     CHECK_CUBLAS(cublasCreate(&handle));
+    cublasSetMathMode(handle, CUBLAS_TF32_TENSOR_OP_MATH);
 
     curandGenerator_t gen;
     CHECK_CURAND(curandCreateGenerator(&gen, CURAND_RNG_PSEUDO_DEFAULT));
