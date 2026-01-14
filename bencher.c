@@ -10,7 +10,7 @@
 #define L3_SIZE 3e6
 #define CACHE_LINE_SIZE 64
 #define MAT_SIZE 2048
-#define NB_REPEAT 10
+#define NB_REPEAT 20
 #define MAX_MASK_SIZE 64
 
 // stolen from https://stackoverflow.com/questions/68804469/subtract-two-timespec-objects-find-difference-in-time-or-duration
@@ -134,6 +134,7 @@ int main(void) {
   for (int j = 0; j < MAX_MASK_SIZE; j += 1) {
     cur = bench(A, B, C, j);
     fprintf(fp, "%d,,%.6f\n", j, to_gflops(cur));
+    printf("%d,,%.6f\n", j, to_gflops(cur));
     print_progress(++current_step, total_steps);
   } 
   free(A);
