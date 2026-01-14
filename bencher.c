@@ -67,7 +67,7 @@ double *alloc_random_matrix(const int size, const int n_bits_to_mask) {
 }
 
 #define MAT_SIZE 2048
-#define NB_REPET 5
+#define NB_REPET 10
 
 struct timespec get_duration_random(int mask_size) {
     double *A, *B, *C;
@@ -78,11 +78,11 @@ struct timespec get_duration_random(int mask_size) {
     struct timespec start, end;
     assert(clock_gettime(CLOCK_MONOTONIC, &start) == 0);
     
-    cblas_dgemm(CblasColMajor, CblasNoTrans, CblasNoTrans, 
+    cblas_dgemm(CblasColMajor, CblasTrans, CblasNoTrans, 
                 MAT_SIZE, MAT_SIZE, MAT_SIZE, 
                 1.0, A, MAT_SIZE, B, MAT_SIZE, 
-                1.0, C, MAT_SIZE);
-                
+                0, C, MAT_SIZE);
+
     assert(clock_gettime(CLOCK_MONOTONIC, &end) == 0);
     
     free(A);
