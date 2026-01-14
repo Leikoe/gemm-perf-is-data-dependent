@@ -11,6 +11,7 @@
         buildInputs = with pkgs; [
           python3
           python313Packages.matplotlib
+          hwloc
           libgcc
           gnumake
           openblas

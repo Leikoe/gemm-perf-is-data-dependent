@@ -3,7 +3,7 @@ CFLAGS=-I/usr/local/cuda/include -arch=sm_80
 all: cuda_bencher
 
 cpu_bencher: bencher.c
-	gcc bencher.c -o cpu_bencher -march=native -lopenblas -lrt
+	gcc bencher.c -o cpu_bencher -march=native -lopenblas -lrt -lhwloc
 
 
 cuda_bencher: bencher.cu
