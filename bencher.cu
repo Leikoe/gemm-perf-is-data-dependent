@@ -4,7 +4,7 @@
 #include <cublas_v2.h>
 #include <curand.h>
 
-#define ITERATIONS 20
+#define ITERATIONS 50
 #define SIZE 16384
 
 // --- Error Handling Macros ---
