@@ -103,7 +103,7 @@ int main(void) {
     return EXIT_FAILURE;
   }
 
-  fprintf(fp, "n_bits_zeroed,gflops\n");
+  fprintf(fp, "BitsZeroed,,AvgTFLOPS\n");
 
   struct timespec cur;
 
@@ -125,7 +125,7 @@ int main(void) {
   for (int j = 0; j < 64; j += 1) {
     // get_duration_random now returns the average timespec for this mask
     cur = bench(A, B, C, j);
-    fprintf(fp, "%d,%.6f\n", j, to_gflops(cur));
+    fprintf(fp, "%d,,%.6f\n", j, to_gflops(cur));
     print_progress(++current_step, total_steps);
   } 
   free(A);
