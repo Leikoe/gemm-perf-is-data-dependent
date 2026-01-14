@@ -9,6 +9,6 @@
 ## How to run
 ```shell
 make
-./cuda_bencher > cuda.csv
-python main.py # produces `flops_vs_bits.png`
+./cuda_bencher > gpu_model.csv
+python main.py path/to/gpu_model.csv # produces `flops_vs_zeroed_bits_gpu_model.png`
 ```
