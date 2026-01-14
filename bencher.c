@@ -1,12 +1,18 @@
 #include <assert.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <cblas.h>
 #include <time.h>
-#include <string.h> // added for memset
+#include <string.h>
 
+#define L3_SIZE 3e6
+#define CACHE_LINE_SIZE 64
 #define MAT_SIZE 2048
 #define NB_REPEAT 10
+#define MAX_MASK_SIZE 64
+
 // stolen from https://stackoverflow.com/questions/68804469/subtract-two-timespec-objects-find-difference-in-time-or-duration
 struct timespec diff_timespec(const struct timespec *time0, const struct timespec *time1) {
   assert(time0);
@@ -20,24 +26,30 @@ struct timespec diff_timespec(const struct timespec *time0, const struct timespe
   return diff;
 }
 
-double *alloc_matrix(const int size);
-double *alloc_random_matrix(const int size);
-
-double *alloc_matrix(const int size) {
-  double *mat = (double *)calloc(size * size, sizeof(double));
+double *alloc_matrix() {
+  double *mat = (double *)calloc(MAT_SIZE * MAT_SIZE, sizeof(double));
   assert(mat);
   return mat;
 }
 
-double *alloc_random_matrix(const int size) {
-  double *mat = (double*)malloc(size * size * sizeof(double));
-
-  for (int i = 0; i < size * size; i++) {
+double *alloc_random_matrix() {
+  double *mat = (double*)malloc(MAT_SIZE * MAT_SIZE * sizeof(double));
+  assert(mat);
+  for (int i = 0; i < MAT_SIZE * MAT_SIZE; i++) {
     double rnd_val = (double)rand() / RAND_MAX;
     mat[i] = rnd_val;
   }
 
   return mat;
+}
+
+void clear_cache() {
+  const size_t bytes_to_read = L3_SIZE * 2;  // 2 times LLC just to make sure
+  uint8_t *buffer = malloc(bytes_to_read);
+  assert(buffer);
+  for (size_t mem_idx = 0; mem_idx < bytes_to_read; mem_idx += CACHE_LINE_SIZE) {
+    buffer[mem_idx] = (uint8_t)mem_idx;
+  }
 }
 
 struct timespec bench(double *A, double *B, double *C, int mask_size) {
@@ -59,6 +71,7 @@ struct timespec bench(double *A, double *B, double *C, int mask_size) {
 
   for (int i = 0; i < NB_REPEAT; i++) {
     memset(C, 0, MAT_SIZE * MAT_SIZE * sizeof(double));
+    clear_cache();
 
     assert(clock_gettime(CLOCK_MONOTONIC, &start) == 0);
 
@@ -107,23 +120,18 @@ int main(void) {
 
   struct timespec cur;
 
-  int total_steps = 64; 
+  int total_steps = MAX_MASK_SIZE; 
   int current_step = 0;
 
   double *A, *B, *C;
-  A = alloc_random_matrix(MAT_SIZE);
-  B = alloc_random_matrix(MAT_SIZE);
-  C = alloc_matrix(MAT_SIZE);
+  A = alloc_random_matrix();
+  B = alloc_random_matrix();
+  C = alloc_matrix();
 
   printf("Starting benchmark (Results -> benchmark_results.csv)...\n");
   printf("Matrices: %dx%d | Averaging over %d repetitions per mask\n", MAT_SIZE, MAT_SIZE, NB_REPEAT);
 
-  printf("Warming up...\n");
-  bench(A, B, C, 0);
-  printf("Warm up done.\n");
-
-  for (int j = 0; j < 64; j += 1) {
-    // get_duration_random now returns the average timespec for this mask
+  for (int j = 0; j < MAX_MASK_SIZE; j += 1) {
     cur = bench(A, B, C, j);
     fprintf(fp, "%d,,%.6f\n", j, to_gflops(cur));
     print_progress(++current_step, total_steps);
