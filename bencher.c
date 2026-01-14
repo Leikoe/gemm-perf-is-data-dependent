@@ -138,7 +138,7 @@ int main(void) {
     
     struct timespec cur;
     
-    int total_steps = 27; 
+    int total_steps = 52; 
     int current_step = 0;
 
     printf("Starting benchmark (Results -> benchmark_results.csv)...\n");
@@ -148,7 +148,7 @@ int main(void) {
     get_duration_random(0);
     printf("Warm up done.\n");
 
-    for (int j = 0; j <= 53; j += 2) {
+    for (int j = 0; j <= 52; j += 1) {
         // get_duration_random now returns the average timespec for this mask
         cur = get_duration_random(j);
         fprintf(fp, "%d,%.6f\n", j, to_gflops(cur));
