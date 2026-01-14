@@ -33,6 +33,6 @@ if __name__ == "__main__":
 
     plt.xticks(range(0, 33, 2))
 
-    output_file = "flops_vs_bits.png"
+    output_file = f"flops_vs_zeroed_bits_{experiment_name}.png"
     plt.savefig(output_file)
     print(f"Plot saved to {output_file}")
