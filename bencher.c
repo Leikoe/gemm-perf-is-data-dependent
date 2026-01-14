@@ -3,17 +3,10 @@
 #include <stdio.h>
 #include <cblas.h>
 #include <time.h>
-#include <stdint.h>
-#include <string.h> // Added for memset
+#include <string.h> // added for memset
 
 #define MAT_SIZE 2048
-#define NB_REPET 10 // Number of iterations for averaging
-
-union DoubleBits {
-    double d;
-    uint64_t u;
-};
-
+#define NB_REPEAT 10
 // stolen from https://stackoverflow.com/questions/68804469/subtract-two-timespec-objects-find-difference-in-time-or-duration
 struct timespec diff_timespec(const struct timespec *time0, const struct timespec *time1) {
     assert(time0);
@@ -28,9 +21,7 @@ struct timespec diff_timespec(const struct timespec *time0, const struct timespe
 }
 
 double *alloc_matrix(const int size);
-double *alloc_const_matrix(const int size, const int c);
-double *alloc_interval_matrix(const int size);
-double *alloc_random_matrix(const int size, const int n_bits_to_mask);
+double *alloc_random_matrix(const int size);
 
 double *alloc_matrix(const int size) {
     double *mat = (double *)calloc(size * size, sizeof(double));
@@ -38,50 +29,28 @@ double *alloc_matrix(const int size) {
     return mat;
 }
 
-double *alloc_const_matrix(const int size, const int c) {
-    double *mat = alloc_matrix(size);
-    for (int i = 0; i < size * size; i++) {
-        mat[i] = c;
-    }
-    return mat;
-}
-
-double *alloc_interval_matrix(const int size) {
-    double *mat = alloc_matrix(size);
-    for (int i = 0; i < size * size; i++) {
-        mat[i] = (double)i / (size * size - 1);
-    }
-    return mat;
-}
-
-double *alloc_random_matrix(const int size, const int n_bits_to_mask) {
-    double *mat = alloc_matrix(size);
+double *alloc_random_matrix(const int size) {
+    double *mat = (double*)malloc(size * size * sizeof(double));
     
-    uint64_t mask = (~0ULL) << n_bits_to_mask; 
-
     for (int i = 0; i < size * size; i++) {
         double rnd_val = (double)rand() / RAND_MAX;
-        
-        union DoubleBits converter;
-        converter.d = rnd_val;
-        converter.u &= mask;
-        mat[i] = converter.d;
+        mat[i] = rnd_val;
     }
+
     return mat;
 }
 
-struct timespec get_duration_random(int mask_size) {
-    double *A, *B, *C;
-    // Alloc A and B once
-    A = alloc_random_matrix(MAT_SIZE, mask_size); 
-    B = alloc_random_matrix(MAT_SIZE, mask_size);
-    C = alloc_const_matrix(MAT_SIZE, 0);
-    
+struct timespec bench(double *A, double *B, double *C, int mask_size) {
     struct timespec start, end, diff;
     double total_time_sec = 0.0;
     
-    for (int i = 0; i < NB_REPET; i++) {
-        // Reset C before measuring
+    long mask = (~0UL) << mask_size;
+    for (int k = 0; k < MAT_SIZE * MAT_SIZE; k++) {
+      ((long *) A)[k] &= mask;
+      ((long *) B)[k] &= mask;
+    }
+
+    for (int i = 0; i < NB_REPEAT; i++) {
         memset(C, 0, MAT_SIZE * MAT_SIZE * sizeof(double));
 
         assert(clock_gettime(CLOCK_MONOTONIC, &start) == 0);
@@ -93,19 +62,12 @@ struct timespec get_duration_random(int mask_size) {
 
         assert(clock_gettime(CLOCK_MONOTONIC, &end) == 0);
 
-        // Accumulate duration of this specific run
         diff = diff_timespec(&start, &end);
         total_time_sec += (double)diff.tv_sec + (double)diff.tv_nsec / 1e9;
     }
     
-    free(A);
-    free(B);
-    free(C);
+    double avg_sec = total_time_sec / NB_REPEAT;
 
-    // Compute average
-    double avg_sec = total_time_sec / NB_REPET;
-
-    // Return average as timespec
     struct timespec avg_ts;
     avg_ts.tv_sec = (time_t)avg_sec;
     avg_ts.tv_nsec = (long)((avg_sec - avg_ts.tv_sec) * 1e9);
@@ -138,22 +100,30 @@ int main(void) {
     
     struct timespec cur;
     
-    int total_steps = 52; 
+    int total_steps = 64; 
     int current_step = 0;
 
+    double *A, *B, *C;
+    A = alloc_random_matrix(MAT_SIZE);
+    B = alloc_random_matrix(MAT_SIZE);
+    C = alloc_matrix(MAT_SIZE);
+
     printf("Starting benchmark (Results -> benchmark_results.csv)...\n");
-    printf("Matrices: %dx%d | Averaging over %d repetitions per mask\n", MAT_SIZE, MAT_SIZE, NB_REPET);
+    printf("Matrices: %dx%d | Averaging over %d repetitions per mask\n", MAT_SIZE, MAT_SIZE, NB_REPEAT);
 
     printf("Warming up...\n");
-    get_duration_random(0);
+    bench(A, B, C, 0);
     printf("Warm up done.\n");
 
-    for (int j = 0; j <= 52; j += 1) {
+    for (int j = 0; j < 64; j += 1) {
         // get_duration_random now returns the average timespec for this mask
-        cur = get_duration_random(j);
+        cur = bench(A, B, C, j);
         fprintf(fp, "%d,%.6f\n", j, to_gflops(cur));
         print_progress(++current_step, total_steps);
     } 
+    free(A);
+    free(B);
+    free(C);
 
     printf("\nDone.\n");
     fclose(fp);
