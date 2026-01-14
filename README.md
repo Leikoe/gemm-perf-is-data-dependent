@@ -1,5 +1,9 @@
 # Simple benchmarks reproducing the paper "DGEMM performance is data-dependent" and the blog post "Strangely, Matrix Multiplications on GPUs Run Faster When Given "Predictable" Data!"
 
+## Reference materials
+- https://arxiv.org/abs/1912.05381
+- https://www.thonking.ai/p/strangely-matrix-multiplications
+
 ## Requirements
 - python3 
 - matplotlib
