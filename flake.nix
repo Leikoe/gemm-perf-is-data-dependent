@@ -14,6 +14,7 @@
           hwloc
           libgcc
           gnumake
+          pkg-config
           openblas
           R
           rPackages.RColorBrewer
