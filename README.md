@@ -14,5 +14,5 @@
 ```shell
 make
 ./cuda_bencher > gpu_model.csv
-python main.py path/to/gpu_model.csv # produces `flops_vs_zeroed_bits_gpu_model.png`
+python generate_plot.py path/to/gpu_model.csv # produces `flops_vs_zeroed_bits_gpu_model.png`
 ```
